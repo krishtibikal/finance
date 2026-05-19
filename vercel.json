@@ -3,7 +3,13 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "builds": [
-    { "src": "api/*.py", "use": "@vercel/python" },
+    { "src": "api/market_overview.py", "use": "@vercel/python" },
+    { "src": "api/top_traded.py", "use": "@vercel/python" },
+    { "src": "api/top_volatile.py", "use": "@vercel/python" },
+    { "src": "api/top_profitable.py", "use": "@vercel/python" },
+    { "src": "api/top_gainers_losers.py", "use": "@vercel/python" },
+    { "src": "api/stock_detail.py", "use": "@vercel/python" },
+    { "src": "api/daily_picks.py", "use": "@vercel/python" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
