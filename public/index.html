@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASDAQ Finance Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="text-2xl font-bold text-emerald-400">$ NASDAQ</div>
+                <span class="text-xs text-gray-500 hidden sm:inline">Real-Time Dashboard</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="market-status" class="flex items-center gap-2">
+                    <span class="status-dot"></span>
+                    <span class="text-sm text-gray-400">Loading...</span>
+                </div>
+                <div id="last-updated" class="text-xs text-gray-500"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Market Overview Banner -->
+    <section id="market-overview" class="bg-gray-900 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex flex-wrap items-center gap-6">
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wider">NASDAQ Composite</div>
+                    <div class="flex items-baseline gap-3 mt-1">
+                        <span id="index-price" class="text-3xl font-bold">--</span>
+                        <span id="index-change" class="text-lg font-semibold">--</span>
+                        <span id="index-pct" class="text-sm px-2 py-0.5 rounded">--</span>
+                    </div>
+                </div>
+                <div class="flex gap-6 text-sm text-gray-400">
+                    <div>
+                        <span class="text-gray-600">Day High</span>
+                        <div id="index-high" class="font-medium text-gray-300">--</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Day Low</span>
+                        <div id="index-low" class="font-medium text-gray-300">--</div>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Prev Close</span>
+                        <div id="index-prev" class="font-medium text-gray-300">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- Daily Investment Picks -->
+        <div class="picks-panel">
+            <div class="picks-header">
+                <div class="flex items-center gap-3">
+                    <div class="picks-icon">$</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Daily Investment Picks</h2>
+                        <p class="text-xs text-gray-400">Top 5 momentum plays &bull; Entry/Exit targets &bull; Portfolio: <span id="picks-portfolio" class="text-emerald-400 font-semibold">$1,000</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 text-sm">
+                        <label for="portfolio-input" class="text-gray-400">Portfolio $</label>
+                        <input type="number" id="portfolio-input" value="1000" min="100" step="100"
+                            class="bg-gray-800 border border-gray-700 rounded px-2 py-1 w-24 text-white text-sm focus:outline-none focus:border-emerald-500">
+                        <button onclick="updatePortfolio()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded transition-colors">Update</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Warning -->
+            <div class="bg-red-950/40 border border-red-800/40 rounded-lg px-4 py-3 mb-4 text-xs text-red-300 leading-relaxed">
+                <span class="font-bold text-red-400">HIGH RISK WARNING:</span> Targeting 10% daily returns is extremely aggressive. Most professional traders target 1-2% daily. You can lose your entire investment. This is algorithmic analysis, NOT financial advice. Past performance does not predict future results. Only invest what you can afford to lose.
+            </div>
+
+            <!-- Portfolio Summary Bar -->
+            <div id="picks-summary" class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+                <div class="bg-gray-800/60 rounded-lg px-3 py-2 text-center">
+                    <div class="text-xs text-gray-500">Total Capital</div>
+                    <div id="summary-capital" class="text-lg font-bold text-white">$1,000</div>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg px-3 py-2 text-center">
+                    <div class="text-xs text-gray-500">Positions</div>
+                    <div id="summary-positions" class="text-lg font-bold text-emerald-400">5</div>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg px-3 py-2 text-center">
+                    <div class="text-xs text-gray-500">Avg Potential</div>
+                    <div id="summary-avg-gain" class="text-lg font-bold text-amber-400">--%</div>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg px-3 py-2 text-center">
+                    <div class="text-xs text-gray-500">Max Risk (3% SL)</div>
+                    <div id="summary-risk" class="text-lg font-bold text-red-400">--</div>
+                </div>
+                <div class="bg-gray-800/60 rounded-lg px-3 py-2 text-center">
+                    <div class="text-xs text-gray-500">Target Profit</div>
+                    <div id="summary-target" class="text-lg font-bold text-emerald-400">--</div>
+                </div>
+            </div>
+
+            <!-- Picks Cards -->
+            <div id="picks-container" class="space-y-3">
+                <div class="text-center text-gray-500 py-8">Loading daily picks...</div>
+            </div>
+        </div>
+
+        <!-- Row 1: Top Traded + Top Volatile -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Top 10 Most Traded -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Top 10 Most Traded</h2>
+                    <span class="text-xs text-gray-500">by volume</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Symbol</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Change</th>
+                                <th class="text-right">% Change</th>
+                                <th class="text-right">Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-traded-body">
+                            <tr><td colspan="6" class="text-center text-gray-500 py-8">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top 10 Most Volatile -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Top 10 Most Volatile</h2>
+                    <span class="text-xs text-gray-500">by % price swing</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Symbol</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">High</th>
+                                <th class="text-right">Low</th>
+                                <th class="text-right">% Swing</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-volatile-body">
+                            <tr><td colspan="6" class="text-center text-gray-500 py-8">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Top Profitable -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Top 10 Suggested Profitable Stocks</h2>
+                <span class="text-xs text-amber-400">Momentum-based signals</span>
+            </div>
+            <div class="bg-amber-950/30 border border-amber-800/30 rounded px-3 py-2 mb-3 text-xs text-amber-300">
+                For informational purposes only. Not financial advice. Signal strength is based on price momentum, volume ratio, and 5-day SMA position.
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Symbol</th>
+                            <th class="text-right">Price</th>
+                            <th class="text-right">% Change</th>
+                            <th class="text-right">Volume</th>
+                            <th class="text-right">Vol Ratio</th>
+                            <th class="text-center">Above SMA5</th>
+                            <th class="text-right">Signal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-profitable-body">
+                        <tr><td colspan="8" class="text-center text-gray-500 py-8">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Row 3: Gainers + Losers -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Top Gainers -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title text-emerald-400">Top 5 Gainers</h2>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Symbol</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Change</th>
+                                <th class="text-right">% Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gainers-body">
+                            <tr><td colspan="5" class="text-center text-gray-500 py-8">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Losers -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title text-red-400">Top 5 Losers</h2>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Symbol</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Change</th>
+                                <th class="text-right">% Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="losers-body">
+                            <tr><td colspan="5" class="text-center text-gray-500 py-8">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Detail Modal -->
+        <div id="stock-modal" class="modal hidden">
+            <div class="modal-backdrop" onclick="closeModal()"></div>
+            <div class="modal-content">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 id="modal-symbol" class="text-2xl font-bold"></h2>
+                        <p id="modal-name" class="text-sm text-gray-400"></p>
+                    </div>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+                </div>
+                <div class="flex items-baseline gap-3 mb-4">
+                    <span id="modal-price" class="text-3xl font-bold"></span>
+                    <span id="modal-change" class="text-lg font-semibold"></span>
+                    <span id="modal-pct" class="text-sm px-2 py-0.5 rounded"></span>
+                </div>
+                <div id="modal-chart" class="w-full h-64 mb-4 rounded overflow-hidden"></div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm" id="modal-stats"></div>
+                <div class="mt-4">
+                    <h3 class="text-sm font-semibold text-gray-400 mb-2">5-Day History</h3>
+                    <div id="modal-history" class="w-full h-32 rounded overflow-hidden"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 mt-12 py-6 text-center text-xs text-gray-600">
+        <p>Data provided by Yahoo Finance. ~15 min delay. Auto-refreshes every 60s.</p>
+        <p class="mt-1">For informational purposes only. Not financial advice.</p>
+    </footer>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
